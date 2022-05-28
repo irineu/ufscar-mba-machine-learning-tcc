@@ -20,24 +20,23 @@ https://www.youtube.com/watch?v=uoh1ssohiXU
 
 
 ```
-wget https://bootstrap.pypa.io/get-pip.py
-sudo python3 get-pip.py
-```
-
-```
-sudo apt-get update --allow-releaseinfo-change
-
-```
 sudo pip install virtualenv
 virtualenv venv
-```
-
-https://qengineering.eu/install-tensorflow-2.7-on-raspberry-64-os.html
-
-```
 source venv/bin/activate
 pip install -r requirements.txt
+
+cd ~
+git clone https://github.com/Qengineering/Tensorflow-io.git
+cd Tensorflow-io
+sudo -H pip3 install tensorflow_io_gcs_filesystem-0.23.1-cp39-cp39-linux_aarch64.whl
+
+sudo -H pip3 install gdown
+gdown https://drive.google.com/uc?id=1YpxNubmEL_4EgTrVMu-kYyzAbtyLis29
+sudo -H pip3 install tensorflow-2.8.0-cp39-cp39-linux_aarch64.whl
 ```
 
 
+
+
+https://qengineering.eu/install-tensorflow-2.7-on-raspberry-64-os.html
 https://pytorch.org/tutorials/intermediate/realtime_rpi.html
