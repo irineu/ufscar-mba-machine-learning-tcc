@@ -4,4 +4,5 @@ numpy==1.21.4
 opencv-python
 tensorflow
 cvlib
+protobuf==3.20.1
 opencv-python-headless==4.1.0.25
