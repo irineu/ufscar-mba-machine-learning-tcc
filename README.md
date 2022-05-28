@@ -27,36 +27,17 @@ sudo python3 get-pip.py
 ```
 sudo apt-get update --allow-releaseinfo-change
 
-sudo apt-get install build-essential cmake pkg-config libjpeg-dev libtiff5-dev libjasper-dev libpng-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libfontconfig1-dev libcairo2-dev libgdk-pixbuf2.0-dev libpango1.0-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran libhdf5-dev libhdf5-serial-dev libhdf5-103 libqtgui4 libqtwebkit4 libqt4-test python3-pyqt5 python3-dev -y
-
-sudo apt-get install qt-sdk 
-sudo apt-get install libssl-dev
 ```
-
-```
-sudo pip3 install virtualenv
+sudo pip install virtualenv
 virtualenv venv
 ```
 
+https://qengineering.eu/install-tensorflow-2.7-on-raspberry-64-os.html
+
 ```
 source venv/bin/activate
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-https://egemenertugrul.github.io/blog/Darknet-NNPACK-on-Raspberry-Pi/
-https://github.com/digitalbrain79/darknet-nnpack
-https://github.com/mrhosseini/NNPACK-darknet
-
-
-avoid ninja https://github.com/digitalbrain79/darknet-nnpack/issues/60
-
-mkdir build
-cd build
-cmake -G "Unix Makefiles" ..
-make
-
-opencv-python==4.5.5.64
-opencv-contrib-python==4.5.5.64
-opencv-python-headless==4.5.5.64
 
 https://pytorch.org/tutorials/intermediate/realtime_rpi.html
