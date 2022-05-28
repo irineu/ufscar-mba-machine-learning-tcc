@@ -42,3 +42,21 @@ virtualenv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 ```
+
+https://egemenertugrul.github.io/blog/Darknet-NNPACK-on-Raspberry-Pi/
+https://github.com/digitalbrain79/darknet-nnpack
+https://github.com/mrhosseini/NNPACK-darknet
+
+
+avoid ninja https://github.com/digitalbrain79/darknet-nnpack/issues/60
+
+mkdir build
+cd build
+cmake -G "Unix Makefiles" ..
+make
+
+opencv-python==4.5.5.64
+opencv-contrib-python==4.5.5.64
+opencv-python-headless==4.5.5.64
+
+https://pytorch.org/tutorials/intermediate/realtime_rpi.html
