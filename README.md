@@ -9,9 +9,6 @@ https://keras.io/examples/vision/retinanet/
 
 https://www.youtube.com/watch?v=Sx_HioMUtiY
 https://www.youtube.com/watch?v=8L3PCqADFPo
-
-
-!!cool
 https://www.youtube.com/watch?v=xhdNV5VYdGM
 https://github.com/arunponnusamy/cvlib
 https://www.youtube.com/watch?v=uoh1ssohiXU
