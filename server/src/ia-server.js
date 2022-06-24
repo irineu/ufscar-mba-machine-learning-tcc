@@ -24,6 +24,14 @@ function startServer(port){
     
     server.on("data", (socketClient, header, dataBuffer) => {
         //global.logger.info("MESSAGE RECEIVED! \t id:"+socketClient.id+" message:"+dataBuffer.toString());
+
+        switch(header.transaction){
+            case "proccess":
+                
+            default:
+                    global.logger.error("IA: Transaction not recognized");
+                    break;
+        }
     });
 }
 

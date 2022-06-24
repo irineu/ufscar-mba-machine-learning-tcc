@@ -19,9 +19,23 @@ let controlServer;
 let imageServerConnections = {};
 let controlServerConnections = {};
 
-let rpiConnections = {};
-
 const TRAIN_DIR = "train_dir";
+
+function onAuth(type, socket, id){
+
+    socket.authId = id;
+
+    if(type == "image"){
+        imageServerConnections[id] = socket;
+    }else if(type == "control"){
+        controlServerConnections[id] = socket;
+    }
+
+    if(imageServerConnections[id] && controlServerConnections[id]){
+        imageServerConnections[id].isAuth = true;
+        controlServerConnections[id].isAuth = true;
+    }
+}
 
 async function startImageServer(port){
     return new Promise((resolve, reject) => {
@@ -34,12 +48,13 @@ async function startImageServer(port){
         
         imageServer.on('client_connected', (socketClient) => {
             global.logger.info("New RPI-Image-Device: \t id:"+socketClient.id+" origin:"+socketClient.address().address);
-            imageServerConnections[socketClient.id] = socketClient;
         });
         
         imageServer.on('client_close', (socketClient) => {
             global.logger.info("RPI-Image-Device DISCONNECTED! \t id:"+socketClient.id);
-            delete imageServerConnections[socketClient.id];
+            if(socketClient.isAuth){
+                delete imageServerConnections[socketClient.authId];
+            }
         });
         
         imageServer.on("data", (socketClient, header, dataBuffer) => {
@@ -50,16 +65,24 @@ async function startImageServer(port){
                 return;
             }
 
+            if(!socketClient.isAuth){
+                if(header.transaction == "auth"){
+                    onAuth("image", socketClient, dataBuffer);
+                }
+                return;
+            }
+
             switch(header.transaction){
                 case "frame":
                     if (!fs.existsSync(TRAIN_DIR)){
                         fs.mkdirSync(TRAIN_DIR);
                     }
                     fs.writeFileSync(`${TRAIN_DIR}/${uuid.v4()}.jpg`, dataBuffer);
-                    iaServer.processImage(socketClient.id, dataBuffer);
+                    iaServer.processImage(socketClient.authId, dataBuffer);
                     break;
                 default:
-                    global.logger.error("Transaction not recognized");
+                    global.logger.error("RPI: Transaction not recognized");
+                    break;
             }
         });
     });
@@ -76,16 +99,36 @@ async function startControlServer(port){
         
         controlServer.on('client_connected', (socketClient) => {
             global.logger.info("New RPI-Control-Device: \t id:"+socketClient.id+" origin:"+socketClient.address().address);
-            controlServerConnections[socketClient.id] = socketClient;
         });
         
         controlServer.on('client_close', (socketClient) => {
             global.logger.info("RPI-Control-Device DISCONNECTED! \t id:"+socketClient.id);
-            delete controlServerConnections[socketClient.id];
+            if(socketClient.isAuth){
+                delete controlServerConnections[socketClient.authId];
+            }
         });
         
         controlServer.on("data", (socketClient, header, dataBuffer) => {
             //global.logger.info("MESSAGE RECEIVED! \t id:"+socketClient.id+" message:"+dataBuffer.toString());
+
+            if(!header.transaction){
+                global.logger.error("Transaction not specified");
+                return;
+            }
+
+            if(!socketClient.isAuth){
+                if(header.transaction == "auth"){
+                    onAuth("control", socketClient, dataBuffer);
+                }
+                return;
+            }
+
+            switch(header.transaction){
+
+                default:
+                    global.logger.error("RPI: Transaction not recognized");
+                    break;
+            }
         });
     });
 }
