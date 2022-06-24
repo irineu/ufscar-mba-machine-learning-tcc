@@ -3,6 +3,8 @@ import gzip from 'compression';
 import morgan from 'morgan';
 import cors from 'cors';
 import winston from 'winston';
+import { Server } from "socket.io";
+import { createServer } from "http";
 import rpiServer from './rpi-server.js'
 import iaServer from './ia-server.js'
 
@@ -26,6 +28,14 @@ app.use(gzip())
     .use(express.urlencoded({ extended: true }))
     .use(express.json())
     .use(morgan('dev'));
+
+const httpServer = createServer(app);
+
+const io = new Server(httpServer, { /* options */ });
+
+io.on("connection", (socket) => {
+    global.logger.info(`new wsocket connection`)
+});
 
 app.listen(port, () => {
     global.logger.info(`Listening HTTP at port ${port}`)

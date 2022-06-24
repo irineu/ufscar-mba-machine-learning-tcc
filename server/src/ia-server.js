@@ -28,7 +28,12 @@ function startServer(port){
 }
 
 function processImage(rpiID, buffer){
-
+    if(mainIAServer == {}){
+        global.warn.info("There is no IA Servers Available");
+        return;
+    }
+    let mainIAServer = Object.keys(iaConnections)[0];
+    hachiNIO.send(mainIAServer, {transaction : "proccess", from: rpiID}, buffer);
 }
 
-export default {startServer}
+export default {startServer, processImage}

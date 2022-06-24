@@ -1,4 +1,17 @@
 import hachiNIO from "hachi-nio";
+import iaServer from "./ia-server.js"
+import fs from "fs";
+
+//import AWS from "aws-sdk";
+
+// AWS.config.update({
+//     region: "us-east-1",
+// });
+
+// const s3 = new AWS.S3({
+//     apiVersion: "2006-03-01",
+//     params: { Bucket: "habitse" }
+// });
 
 let imageServer;
 let controlServer;
@@ -7,6 +20,8 @@ let imageServerConnections = {};
 let controlServerConnections = {};
 
 let rpiConnections = {};
+
+const TRAIN_DIR = "train_dir";
 
 async function startImageServer(port){
     return new Promise((resolve, reject) => {
@@ -29,6 +44,23 @@ async function startImageServer(port){
         
         imageServer.on("data", (socketClient, header, dataBuffer) => {
             //global.logger.info("MESSAGE RECEIVED! \t id:"+socketClient.id+" message:"+dataBuffer.toString());
+
+            if(!header.transaction){
+                global.logger.error("Transaction not specified");
+                return;
+            }
+
+            switch(header.transaction){
+                case "frame":
+                    if (!fs.existsSync(TRAIN_DIR)){
+                        fs.mkdirSync(TRAIN_DIR);
+                    }
+                    fs.writeFileSync(`${TRAIN_DIR}/${uuid.v4()}.jpg`, dataBuffer);
+                    iaServer.processImage(socketClient.id, dataBuffer);
+                    break;
+                default:
+                    global.logger.error("Transaction not recognized");
+            }
         });
     });
 }
