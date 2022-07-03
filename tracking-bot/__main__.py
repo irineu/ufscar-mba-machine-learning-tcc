@@ -86,6 +86,8 @@ async def run_client():
                 opencv.imwrite(str(count)+".jpg", frame)
                 count = count + 1
                 await asyncio.sleep(.1)
+            else:
+                print(laplacian)
     finally:
         #transport_cmd.close()
         #transport_pic.close()
