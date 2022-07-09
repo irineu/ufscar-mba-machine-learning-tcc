@@ -11,7 +11,7 @@ cap.set(opencv.CAP_PROP_FRAME_HEIGHT, 224)
 cap.set(opencv.CAP_PROP_FPS, 36)
 
 loop = None
-addr = "192.168.15.4"
+addr = "irineuantunes.com"
 
 _picIsConnected = False
 _cmdIsConnected = False

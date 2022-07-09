@@ -7,7 +7,7 @@ from hachi_nio import HachiNIOClient
 import json
 
 loop = None
-addr = "192.168.15.4"
+addr = "irineuantunes.com"
 
 def cmd_on_connect(ref):
     print("New Connection! " + str(ref.id))
