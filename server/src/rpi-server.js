@@ -75,12 +75,15 @@ async function startImageServer(port){
 
             switch(header.transaction){
                 case "frame":
-                    console.log("frame");
                     if (!fs.existsSync(TRAIN_DIR)){
                         fs.mkdirSync(TRAIN_DIR);
                     }
-                    console.log(`${TRAIN_DIR}/${uuid.v4()}.jpg`)
-                    fs.writeFileSync(`${TRAIN_DIR}/${uuid.v4()}.jpg`, dataBuffer);
+                    
+                    if(header.train){
+                        //Se elegível para treinar, salva
+                        fs.writeFileSync(`${TRAIN_DIR}/${uuid.v4()}.jpg`, dataBuffer);
+                    }
+                    
                     //comment for while
                     //iaServer.processImage(socketClient.authId, dataBuffer);
                     break;

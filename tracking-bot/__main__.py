@@ -1,6 +1,7 @@
 import asyncio
 import cvlib as cv
 import cv2 as opencv
+import numpy as np
 from cvlib.object_detection import draw_bbox
 from hachi_nio import HachiNIOClient
 
@@ -17,6 +18,28 @@ _cmdIsConnected = False
 
 picConn = None
 cmdConn = None
+
+#imagem base para leitura do histograma
+hsvBase = None
+hsvCount = 0
+
+def calcHistogram(frame):
+    h_bins = 50
+    s_bins = 60
+    histSize = [h_bins, s_bins]
+    h_ranges = [0, 180]
+    s_ranges = [0, 256]
+    ranges = h_ranges + s_ranges
+    channels = [0, 1]
+
+    hsvTest = opencv.cvtColor(frame, opencv.COLOR_BGR2HSV)
+
+    hist_base = opencv.calcHist([hsvBase], channels, None, histSize, ranges, accumulate=False)
+    opencv.normalize(hist_base, hist_base, alpha=0, beta=1, norm_type=opencv.NORM_MINMAX)
+
+    hist_test = opencv.calcHist([hsvTest], channels, None, histSize, ranges, accumulate=False)
+    opencv.normalize(hist_test, hist_test, alpha=0, beta=1, norm_type=opencv.NORM_MINMAX)
+    return opencv.compareHist(hist_base, hist_test, opencv.HISTCMP_CORREL)
 
 def isConnected():
     global _picIsConnected
@@ -111,6 +134,9 @@ async def run_client():
     global loop
     global picConn
 
+    global hsvCount
+    global hsvBase
+
     loop = asyncio.get_running_loop()
     await connect_pic()
     await connect_cmd()
@@ -122,14 +148,35 @@ async def run_client():
             ret, frame = cap.read()
             laplacian = checkBlur(frame)
             if(laplacian > 300):
+
+                elegibleToTrain = False
+
+                if hsvCount == 0:
+                    hsvBase = opencv.cvtColor(frame, opencv.COLOR_BGR2HSV)
+
+                hsvCount += 1
+
+                if hsvCount > 10:
+
+                    histgrm = calcHistogram(frame)
+
+                    if histgrm < .5 :
+                        elegibleToTrain = True
+                        #zerar para definir nova base de calculo
+                        hsvCount = 0
+                    else:
+                        #nao enviar para 0 para servir de checkpoint
+                        hsvCount = 1
+                        print(histgrm)
+
                 if(isConnected()):
-                    print('send')
-                    picConn.send({"transaction" : "frame"}, opencv.imencode('.jpg', frame)[1].tobytes())
-                    print('sent!')
+                    picConn.send({"transaction" : "frame", "train" : elegibleToTrain}, opencv.imencode('.jpg', frame)[1].tobytes())
                 else:
                     # TODO executar local    
                     print("skip")
+
                 await asyncio.sleep(.1)
+
             else:
                 print("Low Laplacian")
                 print(laplacian)
