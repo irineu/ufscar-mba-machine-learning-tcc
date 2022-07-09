@@ -12,12 +12,40 @@ cap.set(opencv.CAP_PROP_FPS, 36)
 loop = None
 addr = "192.168.15.4"
 
+_picIsConnected = False
+_cmdIsConnected = False
+
+picConn = None
+cmdConn = None
+
+def isConnected():
+    global _picIsConnected
+    global _cmdIsConnected
+
+    return _picIsConnected and _cmdIsConnected
+
+def onConnect():
+
+    if(isConnected()):
+        print("ready!")
+
 def checkBlur(image):
     gray = opencv.cvtColor(image, opencv.COLOR_BGR2GRAY)
     return opencv.Laplacian(gray, opencv.CV_64F).var()
 
 def cmd_on_connect(ref):
     print("New Connection! " + str(ref.id))
+
+    global _cmdIsConnected
+    global cmdConn
+
+    _cmdIsConnected = True
+    cmdConn = ref
+
+    cmdConn.send({"transaction" : "auth"}, "123")
+
+    onConnect();
+
     #ref.send({"test" : "123"}, "hello")
 
 def cmd_on_data(header, message, ref):
@@ -33,6 +61,16 @@ def cmd_on_error(ref):
 
 def pic_on_connect(ref):
     print("New Connection! " + str(ref.id))
+    global _picIsConnected
+    global picConn
+    
+    _picIsConnected = True
+    picConn = ref
+
+    picConn.send({"transaction" : "auth"}, "123")
+
+    onConnect()
+
     #ref.send({"test" : "123"}, "hello")
 
 def pic_on_data(header, message, ref):
@@ -51,7 +89,7 @@ async def connect_pic():
     try:
         transport_pic, protocol_pic = await loop.create_connection(
             lambda: HachiNIOClient(pic_on_data, pic_on_connect, client_close=pic_on_close,  client_error=pic_on_error),
-            addr, 3002)
+            addr, 3001)
     except OSError:
         print("connection failed")
         await asyncio.sleep(3) 
@@ -60,8 +98,8 @@ async def connect_pic():
 async def connect_cmd():
     global loop
     try:
-        transport_pic, protocol_pic = await loop.create_connection(
-            lambda: HachiNIOClient(pic_on_data, pic_on_connect, client_close=pic_on_close,  client_error=pic_on_error),
+        transport_cmd, protocol_cmd = await loop.create_connection(
+            lambda: HachiNIOClient(cmd_on_data, cmd_on_connect, client_close=cmd_on_close,  client_error=cmd_on_error),
             addr, 3002)
     except OSError:
         print("connection failed")
@@ -71,6 +109,8 @@ async def connect_cmd():
 
 async def run_client():
     global loop
+    global picConn
+
     loop = asyncio.get_running_loop()
     await connect_pic()
     await connect_cmd()
@@ -78,15 +118,20 @@ async def run_client():
     try:
         #print("on wait")
         #await asyncio.sleep(3600)  # Serve for 1 hour.
-        count = 1
         while(1):
             ret, frame = cap.read()
             laplacian = checkBlur(frame)
-            if(laplacian > 800):
-                opencv.imwrite(str(count)+".jpg", frame)
-                count = count + 1
+            if(laplacian > 300):
+                if(isConnected()):
+                    print('send')
+                    picConn.send({"transaction" : "frame"}, opencv.imencode('.jpg', frame)[1].tobytes())
+                    print('sent!')
+                else:
+                    # TODO executar local    
+                    print("skip")
                 await asyncio.sleep(.1)
             else:
+                print("Low Laplacian")
                 print(laplacian)
     finally:
         #transport_cmd.close()

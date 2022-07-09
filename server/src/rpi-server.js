@@ -1,6 +1,7 @@
 import hachiNIO from "hachi-nio";
 import iaServer from "./ia-server.js"
 import fs from "fs";
+import uuid from 'node-uuid'
 
 //import AWS from "aws-sdk";
 
@@ -74,11 +75,14 @@ async function startImageServer(port){
 
             switch(header.transaction){
                 case "frame":
+                    console.log("frame");
                     if (!fs.existsSync(TRAIN_DIR)){
                         fs.mkdirSync(TRAIN_DIR);
                     }
+                    console.log(`${TRAIN_DIR}/${uuid.v4()}.jpg`)
                     fs.writeFileSync(`${TRAIN_DIR}/${uuid.v4()}.jpg`, dataBuffer);
-                    iaServer.processImage(socketClient.authId, dataBuffer);
+                    //comment for while
+                    //iaServer.processImage(socketClient.authId, dataBuffer);
                     break;
                 default:
                     global.logger.error("RPI: Transaction not recognized");
