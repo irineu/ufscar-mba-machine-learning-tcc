@@ -1,5 +1,5 @@
 {
-  "name": "traking-bot-server",
+  "name": "traking-bot-gateway",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.js",

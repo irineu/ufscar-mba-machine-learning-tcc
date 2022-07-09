@@ -24,6 +24,8 @@ const TRAIN_DIR = "train_dir";
 
 function onAuth(type, socket, id){
 
+    console.log(id);
+
     socket.authId = id;
 
     if(type == "image"){
@@ -68,7 +70,7 @@ async function startImageServer(port){
 
             if(!socketClient.isAuth){
                 if(header.transaction == "auth"){
-                    onAuth("image", socketClient, dataBuffer);
+                    onAuth("image", socketClient, dataBuffer.toString());
                 }
                 return;
             }
@@ -85,7 +87,7 @@ async function startImageServer(port){
                     }
                     
                     //comment for while
-                    //iaServer.processImage(socketClient.authId, dataBuffer);
+                    iaServer.processImage(socketClient.authId, dataBuffer);
                     break;
                 default:
                     global.logger.error("RPI: Transaction not recognized");
@@ -145,4 +147,4 @@ async function startServer(imagePort, controlPort){
     await startControlServer(controlPort);
 }
 
-export default {startServer}
+export default {startServer, imageServerConnections, controlServerConnections}

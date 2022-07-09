@@ -1,4 +1,5 @@
 import hachiNIO from "hachi-nio";
+import rpiServer from "./rpi-server.js"
 
 let server;
 
@@ -26,21 +27,30 @@ function startServer(port){
         //global.logger.info("MESSAGE RECEIVED! \t id:"+socketClient.id+" message:"+dataBuffer.toString());
 
         switch(header.transaction){
-            case "proccess":
-                
+            case "auth":
+                global.logger.info("IA-Processor Auth! \t alias:"+dataBuffer.toString());
+                //TODO reusar o alias futuramente
+                break;
+            case "process":
+                global.logger.info(JSON.stringify(header) + " - " +dataBuffer.toString());
+                global.logger.info(Object.keys( rpiServer.controlServerConnections));
+                let cmdSocket = rpiServer.controlServerConnections[header.to]
+                hachiNIO.send(cmdSocket, {transaction : "bbox"}, dataBuffer);
+                break;
             default:
-                    global.logger.error("IA: Transaction not recognized");
+                    global.logger.error("IA: Transaction not recognized " + header.transaction);
                     break;
         }
     });
 }
 
 function processImage(rpiID, buffer){
-    if(mainIAServer == {}){
+    /*if(mainIAServer == {}){
         global.warn.info("There is no IA Servers Available");
         return;
-    }
-    let mainIAServer = Object.keys(iaConnections)[0];
+    }*/
+    let mainIAServer = iaConnections[Object.keys(iaConnections)[0]];
+    global.logger.info("IA: sending frame for proccess.. " + rpiID)
     hachiNIO.send(mainIAServer, {transaction : "proccess", from: rpiID}, buffer);
 }
 

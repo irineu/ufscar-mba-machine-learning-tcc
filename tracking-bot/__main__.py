@@ -23,6 +23,8 @@ cmdConn = None
 hsvBase = None
 hsvCount = 0
 
+processNext = True;
+
 def calcHistogram(frame):
     h_bins = 50
     s_bins = 60
@@ -72,7 +74,9 @@ def cmd_on_connect(ref):
     #ref.send({"test" : "123"}, "hello")
 
 def cmd_on_data(header, message, ref):
+    global processNext
     print(header, ref.id, message.decode("utf-8"))
+    processNext = True
     # ref.send(header, "hi")
 
 def cmd_on_close(ref):
@@ -137,6 +141,8 @@ async def run_client():
     global hsvCount
     global hsvBase
 
+    global processNext
+
     loop = asyncio.get_running_loop()
     await connect_pic()
     await connect_cmd()
@@ -167,13 +173,18 @@ async def run_client():
                     else:
                         #nao enviar para 0 para servir de checkpoint
                         hsvCount = 1
-                        print(histgrm)
+                        #print(histgrm)
 
-                if(isConnected()):
-                    picConn.send({"transaction" : "frame", "train" : elegibleToTrain}, opencv.imencode('.jpg', frame)[1].tobytes())
+                if processNext:
+                    if(isConnected()):
+                        picConn.send({"transaction" : "frame", "train" : elegibleToTrain}, opencv.imencode('.jpg', frame)[1].tobytes())
+                        processNext = False
+                    else:
+                        # TODO executar local    
+                        print("skip")
                 else:
-                    # TODO executar local    
-                    print("skip")
+                    #print("skip")
+                    x = 1
 
                 await asyncio.sleep(.1)
 
