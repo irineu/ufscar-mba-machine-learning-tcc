@@ -29,6 +29,8 @@ app.use(gzip())
     .use(express.json())
     .use(morgan('dev'));
 
+app.use(express.static('html'));
+
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, { /* options */ });
@@ -37,9 +39,13 @@ io.on("connection", (socket) => {
     global.logger.info(`new wsocket connection`)
 });
 
-app.listen(port, () => {
+httpServer.listen(port);
+
+/*app.listen(port, () => {
     global.logger.info(`Listening HTTP at port ${port}`)
-});
+});*/
+
+global.io = io;
 
 (async ()=>{
     await rpiServer.startServer(3001, 3002);

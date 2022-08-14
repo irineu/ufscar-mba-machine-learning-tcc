@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://kit.fontawesome.com/93b0a6ecc8.js" crossorigin="anonymous"></script>
+    <title>Document</title>
+    <style>
+
+        *{
+            font-family: sans-serif;
+            font-size: 1em;
+        }
+
+        body{
+            background-color: #111;
+            padding: 20px;
+        }
+
+        .imageContainer{
+            margin: 5px;
+            display: inline-block;
+            border: 1px solid #3CFF00;
+            vertical-align: top;
+        }
+
+        .container{
+            margin: 5px;
+            border: 1px solid #3CFF00;
+        }
+
+        .imageHeader{
+            border: 2px solid #111;
+            background-color: #87DE6D;
+            color: #000;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        button.control{
+            background-color: #3CFF00;
+            margin: 3px;
+            border: 0;
+            height: 35px;
+            width: 35px;
+            text-align: center;
+            border: 1px solid #87DE6D;
+        }
+
+        button.acontrol{
+            background-color: #111;
+            margin: 3px;
+            border: 0;
+            height: 35px;
+            width: 35px;
+            text-align: center;
+            border: 1px solid #87DE6D;
+            color: #AAA;
+        }
+
+        h3{
+            color: #3CFF00;
+            margin: 10px;
+            font-size: 22px;
+        }
+
+        #txtLaplacian{
+            margin: 10px;
+            background-color: #000;
+            border: 1px solid #87DE6D;
+            color: #3CFF00;
+            padding: 5px;
+        }
+
+        label{
+            background-color: #3CFF00;
+            color: #111;
+            font-size: 10px;
+            padding: 2px;
+        }
+
+        button.apply{
+            margin: 10px;
+            background-color: #3CFF00;
+            border: 1px solid #87DE6D;
+            color: #111;
+            padding: 5px;
+            font-size: 12px;
+            width: calc(100% - 20px);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="imageContainer">
+        <div class="imageHeader">IMAGEM ORIGINAL</div>
+        <img id="main" />
+    </div>
+
+    <div class="imageContainer">
+        <div class="imageHeader">IMAGEM PROCESSADA</div>
+        <canvas id="imgBBOX"></canvas>
+    </div>
+
+    <div class="imageContainer" style="vertical-align:top">
+        <div class="imageHeader">LAPLACIAN</div>
+        <input type="number" id="txtLaplacian" name="tentacles"min="10" value="300"/>
+        <br/>
+        <button class="apply">APLICAR</button>
+
+        <label>Reconhecido</label>
+        <h3 id="outLaplacian">0</h3>
+
+        <label>Média</label>
+        <h3 id="outLaplacianAVG">0</h3>
+    </div>
+
+    <div style="display: inline-block; vertical-align: top;">
+        <div class="container" style="vertical-align:top">
+            <div class="imageHeader">CONTROLE MANUAL</div>
+            
+            <button class="control"><i class="fa-solid fa-arrow-left"></i></button>
+            <button class="control"><i class="fa-solid fa-arrow-right"></i></button>
+            <button class="control"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="control"><i class="fa-solid fa-arrow-down"></i></button>
+        </div>
+        <br/>
+        <div class="container" style="vertical-align:top">
+            <div class="imageHeader">CONTROLE AUTOMÁTICO</div>
+            
+            <button class="acontrol"><i class="fa-solid fa-arrow-left"></i></button>
+            <button class="acontrol"><i class="fa-solid fa-arrow-right"></i></button>
+            <button class="acontrol"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="acontrol"><i class="fa-solid fa-arrow-down"></i></button>
+            <br/>
+            <button class="apply">DESATIVAR</button>
+        </div>
+    </div>
+    
+</body>
+<script>
+    const socket = io();
+
+    let cimg = new Image();
+    let updateIMG = false;
+
+    let laplacianAVG = [];
+
+    socket.on("laplacian", (rawData) => {
+        let val = Math.round(parseFloat(rawData) * 1000) / 1000;
+        document.getElementById("outLaplacian").innerHTML = val;
+
+        laplacianAVG.push(val);
+
+        if(laplacianAVG.length > 300){
+            laplacianAVG.shift();
+        }
+
+        const sum = laplacianAVG.reduce((a, b) => a + b, 0);
+
+        let avg = (sum / laplacianAVG.length) || 0;
+        avg = Math.round(parseFloat(avg) * 100) / 100;
+
+        document.getElementById("outLaplacianAVG").innerHTML = avg;
+
+    });
+
+    socket.on("frame", (rawData) => {
+        
+        document.getElementById("main").src = "data:image/png;base64, " + rawData;
+
+        let canvas = document.getElementById("imgBBOX");
+        canvas.width = document.getElementById("main").width * 1.5;
+        canvas.height = document.getElementById("main").height * 1.5;
+
+        var ctx = canvas.getContext( '2d' );
+
+        if(updateIMG){
+            ctx.drawImage(cimg, 0, 0,  canvas.width,  canvas.height);
+            updateIMG = false;
+
+            var x = canvas.width / 2;
+            var y = canvas.height / 2;
+
+            // remove aliasing
+            x = Math.floor(x) + 0.5;
+            y = Math.floor(y) + 0.5;
+
+            ctx.beginPath();
+            ctx.strokeWidth = 1;
+
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+
+            ctx.moveTo(0,  y);
+            ctx.lineTo(canvas.width,  y);
+
+            // Line color
+            ctx.strokeStyle = 'rgba(135, 222, 109, .25)';
+            ctx.stroke();
+
+            //////
+            ctx.beginPath();
+            ctx = canvas.getContext( '2d' );
+            ctx.strokeWidth = 1;
+
+            ctx.moveTo(x, y - 10);
+            ctx.lineTo(x, y + 10);
+
+            ctx.moveTo(x - 10,  y);
+            ctx.lineTo(x + 10,  y);
+            
+
+            // Line color
+            ctx.strokeStyle = '#3CFF00';
+            ctx.stroke();
+
+            ////
+
+            let dist = 110;
+
+            ctx.beginPath();
+            ctx = canvas.getContext( '2d' );
+            ctx.strokeWidth = 1;
+
+            ctx.moveTo(x + dist, y - 5);
+            ctx.lineTo(x + dist, y + 5);
+            
+            ctx.moveTo(x - dist, y - 5);
+            ctx.lineTo(x - dist, y + 5);
+
+            ///
+
+            ctx.moveTo(x - 5,  y - dist);
+            ctx.lineTo(x + 5,  y - dist);
+
+            ctx.moveTo(x - 5,  y + dist);
+            ctx.lineTo(x + 5,  y + dist);
+            
+
+            // Line color
+            ctx.strokeStyle = '#3CFF00';
+            ctx.stroke();
+
+
+            // ctx.beginPath();
+            // ctx.arc(x, y, 30, 0, 2 * Math.PI);
+            // ctx.stroke();
+
+            ctx.beginPath();
+            ctx.font = "12px Arial";
+            ctx.fillStyle =  '#3CFF00';
+            ctx.fillText("CONFIDÊNCIA: ?", 10, 20);
+
+            ctx.beginPath();
+            ctx.font = "10px Arial";
+            ctx.fillStyle =  '#3CFF00';
+            ctx.fillText("X: ?", 10, 40);
+
+            ctx.beginPath();
+            ctx.font = "10px Arial";
+            ctx.fillStyle =  '#3CFF00';
+            ctx.fillText("Y: ?", 10, 60);
+
+            ctx.beginPath();
+            ctx.font = "10px Arial";
+            ctx.fillStyle =  '#3CFF00';
+            ctx.fillText("W: ?", 10, 80);
+
+            ctx.beginPath();
+            ctx.font = "1=px Arial";
+            ctx.fillStyle =  '#3CFF00';
+            ctx.fillText("H: ?", 10, 100);
+        }
+
+        cimg.onload = function() {
+            updateIMG = true;
+        };
+
+        cimg.src =  "data:image/png;base64, " + rawData;
+        
+    });
+</script>
+</html>

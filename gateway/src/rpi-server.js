@@ -85,9 +85,16 @@ async function startImageServer(port){
                         //Se elegível para treinar, salva
                         fs.writeFileSync(`${TRAIN_DIR}/${uuid.v4()}.jpg`, dataBuffer);
                     }
+                    console.log("frame");
+                    global.io.emit("frame", dataBuffer.toString("base64"));
                     
                     //comment for while
-                    iaServer.processImage(socketClient.authId, dataBuffer);
+                    //iaServer.processImage(socketClient.authId, dataBuffer);
+                    let cmdSocket = controlServerConnections[socketClient.authId]
+
+                    setTimeout(() => {
+                        hachiNIO.send(cmdSocket, {transaction : "reply"}, "ok");
+                    }, 100);
                     break;
                 default:
                     global.logger.error("RPI: Transaction not recognized");
@@ -133,7 +140,9 @@ async function startControlServer(port){
             }
 
             switch(header.transaction){
-
+                case "laplacian":
+                    global.io.emit("laplacian", dataBuffer.toString());
+                    break;
                 default:
                     global.logger.error("RPI: Transaction not recognized");
                     break;
