@@ -11,7 +11,8 @@ cap.set(opencv.CAP_PROP_FRAME_HEIGHT, 224)
 cap.set(opencv.CAP_PROP_FPS, 36)
 
 loop = None
-addr = "irineuantunes.com"
+#addr = "irineuantunes.com"
+addr = "192.168.15.4"
 
 _picIsConnected = False
 _cmdIsConnected = False
@@ -23,7 +24,7 @@ cmdConn = None
 hsvBase = None
 hsvCount = 0
 
-processNext = True;
+processNext = True
 
 def calcHistogram(frame):
     h_bins = 50
@@ -140,8 +141,7 @@ async def run_client():
 
     global hsvCount
     global hsvBase
-
-    global processNext
+   
 
     loop = asyncio.get_running_loop()
     await connect_pic()
@@ -151,6 +151,7 @@ async def run_client():
         #print("on wait")
         #await asyncio.sleep(3600)  # Serve for 1 hour.
         while(1):
+            global processNext
             ret, frame = cap.read()
             laplacian = checkBlur(frame)
             if(laplacian > 300):
@@ -175,9 +176,12 @@ async def run_client():
                         hsvCount = 1
                         #print(histgrm)
 
+                print(processNext)
                 if processNext:
                     if(isConnected()):
+                        print("send")
                         picConn.send({"transaction" : "frame", "train" : elegibleToTrain}, opencv.imencode('.jpg', frame)[1].tobytes())
+                        print("sent")
                         processNext = False
                     else:
                         # TODO executar local    
@@ -191,6 +195,8 @@ async def run_client():
             else:
                 print("Low Laplacian")
                 print(laplacian)
+            
+            cmdConn.send({"transaction" : "laplacian"}, str(laplacian))
     finally:
         #transport_cmd.close()
         #transport_pic.close()

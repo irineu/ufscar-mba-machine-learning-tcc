@@ -1,6 +1,7 @@
 .DS_Store
 .idea/
 package-lock.json
+gateway/train_dir/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
