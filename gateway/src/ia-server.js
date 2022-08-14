@@ -1,10 +1,13 @@
 import hachiNIO from "hachi-nio";
 import rpiServer from "./rpi-server.js"
+import uuid from 'node-uuid'
+import fs from "fs";
 
 let server;
 
 let iaConnections = {};
 let taskMap = {};
+
 
 function startServer(port){
     server= new hachiNIO.server(port);
@@ -34,6 +37,13 @@ function startServer(port){
             case "process":
                 global.logger.info(JSON.stringify(header) + " - " +dataBuffer.toString());
                 global.logger.info(Object.keys( rpiServer.controlServerConnections));
+
+                if(global.imageMap[header.to]){
+                    //TODO checar score
+                    fs.writeFileSync(`${global.TRAIN_DIR}/${uuid.v4()}.jpg`, global.imageMap[header.to]);
+                    delete global.imageMap[header.to];
+                }
+
                 let cmdSocket = rpiServer.controlServerConnections[header.to]
                 hachiNIO.send(cmdSocket, {transaction : "bbox"}, dataBuffer);
                 break;

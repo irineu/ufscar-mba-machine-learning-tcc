@@ -20,7 +20,7 @@ let controlServer;
 let imageServerConnections = {};
 let controlServerConnections = {};
 
-const TRAIN_DIR = "train_dir";
+
 
 function onAuth(type, socket, id){
 
@@ -77,24 +77,35 @@ async function startImageServer(port){
 
             switch(header.transaction){
                 case "frame":
-                    if (!fs.existsSync(TRAIN_DIR)){
-                        fs.mkdirSync(TRAIN_DIR);
+                    if (!fs.existsSync(global.TRAIN_DIR)){
+                        fs.mkdirSync(global.TRAIN_DIR);
                     }
                     
                     if(header.train){
-                        //Se elegível para treinar, salva
-                        fs.writeFileSync(`${TRAIN_DIR}/${uuid.v4()}.jpg`, dataBuffer);
+
+                        if(global.mode == "TRAIN_MANUAL"){
+                            //Se elegível para treinar, salva
+                            let name = `${global.TRAIN_DIR}/${uuid.v4()}.jpg`;
+                            fs.writeFileSync(name, dataBuffer);
+                            global.io.emit("train_frame",name);
+                        }else{
+                            global.imageMap[socketClient.authId] = dataBuffer;
+                        } 
                     }
-                    console.log("frame");
+                    console.log("frame", );
                     global.io.emit("frame", dataBuffer.toString("base64"));
                     
-                    //comment for while
-                    //iaServer.processImage(socketClient.authId, dataBuffer);
-                    let cmdSocket = controlServerConnections[socketClient.authId]
+                    if(global.mode != "NONE" && global.mode != "TRAIN_MANUAL"){
+                        //comment for while
+                        iaServer.processImage(socketClient.authId, dataBuffer);
+                    }else{
+                         //pocs
+                        setTimeout(() => {
+                            let cmdSocket = controlServerConnections[socketClient.authId]
+                            hachiNIO.send(cmdSocket, {transaction : "reply"}, "ok");
+                        }, 50);
+                    }
 
-                    setTimeout(() => {
-                        hachiNIO.send(cmdSocket, {transaction : "reply"}, "ok");
-                    }, 100);
                     break;
                 default:
                     global.logger.error("RPI: Transaction not recognized");
