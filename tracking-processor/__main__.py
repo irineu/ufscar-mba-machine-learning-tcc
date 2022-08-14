@@ -9,6 +9,8 @@ import json
 loop = None
 addr = "irineuantunes.com"
 
+print("hi")
+
 def cmd_on_connect(ref):
     print("New Connection! " + str(ref.id))
 
