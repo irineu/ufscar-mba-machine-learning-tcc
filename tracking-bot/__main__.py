@@ -1,8 +1,8 @@
 import asyncio
-import cvlib as cv
+#import cvlib as cv
 import cv2 as opencv
 import numpy as np
-from cvlib.object_detection import draw_bbox
+#from cvlib.object_detection import draw_bbox
 from hachi_nio import HachiNIOClient
 
 cap = opencv.VideoCapture(0)
