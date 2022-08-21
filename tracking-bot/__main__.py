@@ -26,6 +26,8 @@ hsvCount = 0
 
 processNext = True
 
+laplacianAVGList = []
+
 def calcHistogram(frame):
     h_bins = 50
     s_bins = 60
@@ -154,7 +156,20 @@ async def run_client():
             global processNext
             ret, frame = cap.read()
             laplacian = checkBlur(frame)
-            if(laplacian > 300):
+
+            laplacianAVGList.append(laplacian)
+
+            if len(laplacianAVGList > 300):
+                laplacianAVGList.pop(0)
+
+            laplaceAVG = 0;
+            for l in laplacianAVGList:
+                laplaceAVG = laplaceAVG + l
+
+            laplaceAVG = laplaceAVG / len(laplacianAVGList)
+            laplaceAVG = laplaceAVG - (laplaceAVG * 0.2)
+            
+            if(laplacian > laplaceAVG):
 
                 elegibleToTrain = False
 
@@ -196,7 +211,7 @@ async def run_client():
                 print("Low Laplacian")
                 print(laplacian)
             
-            cmdConn.send({"transaction" : "laplacian"}, str(laplacian))
+            cmdConn.send({"transaction" : "laplacian", "avg" : laplaceAVG}, str(laplacian))
     finally:
         #transport_cmd.close()
         #transport_pic.close()
