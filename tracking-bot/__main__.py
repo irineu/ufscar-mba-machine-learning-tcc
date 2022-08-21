@@ -159,7 +159,7 @@ async def run_client():
 
             laplacianAVGList.append(laplacian)
 
-            if len(laplacianAVGList > 300):
+            if len(laplacianAVGList) > 300:
                 laplacianAVGList.pop(0)
 
             laplaceAVG = 0;
