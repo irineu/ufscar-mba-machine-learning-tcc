@@ -167,9 +167,8 @@ async def run_client():
                 laplaceAVG = laplaceAVG + l
 
             laplaceAVG = laplaceAVG / len(laplacianAVGList)
-            laplaceAVG = laplaceAVG - (laplaceAVG * 0.2)
             
-            if(laplacian > laplaceAVG):
+            if(laplacian > laplaceAVG - (laplaceAVG * 0.15)):
 
                 elegibleToTrain = False
 
