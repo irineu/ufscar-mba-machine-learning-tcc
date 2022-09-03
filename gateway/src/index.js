@@ -42,25 +42,40 @@ global.trainBounds = null;
 global.imageMap = {};
 global.TRAIN_DIR = "train_dir";
 
+global.activeObj = 'a';
+
 io.on("connection", (socket) => {
     global.logger.info(`new wsocket connection`);
 
     setTimeout(()=>{
-        var files = fs.readdirSync('./train_dir');
-        socket.emit("index",files);
+        var files = fs.readdirSync('./train_dir/' + global.activeObj);
+        socket.emit("index",files.filter(f => f.endsWith("jpg")));
     }, 3000);
 
-    socket.on("mode", (mode, bounds)=>{
+    socket.on("mode", (mode, zLevel)=>{
         global.mode = mode;
+        global.zLevel = zLevel;
 
         if(global.mode == "TRAIN_MANUAL"){
 
         }
     });  
 
+    socket.on("activeObj", (obj)=>{
+        global.activeObj = obj;
+
+        var files = fs.readdirSync('./train_dir/' + global.activeObj);
+        socket.emit("index",files.filter(f => f.endsWith("jpg")));
+    }); 
+
     socket.on("delete", (path)=>{
         path = path.substr(path.indexOf("train"));
-        fs.unlinkSync(path);
+        try{
+            fs.unlinkSync(path);
+        }catch(e){
+
+        }
+        
     });  
 });
 

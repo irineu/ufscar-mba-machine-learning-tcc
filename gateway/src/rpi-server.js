@@ -82,20 +82,28 @@ async function startImageServer(port){
                     }
                     
                     if(header.train){
-
+                        console.log(header.train)
                         if(global.mode == "TRAIN_MANUAL"){
                             //Se elegível para treinar, salva
-                            let name = `${global.TRAIN_DIR}/${uuid.v4()}.jpg`;
-                            fs.writeFileSync(name, dataBuffer);
-                            global.io.emit("train_frame",name);
+                            let cwh = 224;
+                            let dist = global.zLevel * 5 + 30;
+                            let wh = 224/2;
+
+                            let a = Math.round(parseFloat(wh/cwh) * 1000000) / 1000000
+                            let b = Math.round(parseFloat(dist/cwh) * 1000000) / 1000000
+                            
+
+                            let name = `${global.TRAIN_DIR}/${global.activeObj}/${uuid.v4()}`;
+                            fs.writeFileSync(name + ".jpg", dataBuffer);
+                            fs.writeFileSync(name + ".txt", `0 ${a} ${a} ${b} ${b}`);
+                            global.io.emit("train_frame",name + ".jpg");
                         }else{
                             global.imageMap[socketClient.authId] = dataBuffer;
                         } 
                     }
-                    console.log("frame", );
+
                     global.io.emit("frame", dataBuffer.toString("base64"));
-                    
-                    if(global.mode != "NONE" && global.mode != "TRAIN_MANUAL"){
+                    if(global.mode == "NONE"){
                         //comment for while
                         iaServer.processImage(socketClient.authId, dataBuffer);
                     }else{
@@ -152,7 +160,7 @@ async function startControlServer(port){
 
             switch(header.transaction){
                 case "laplacian":
-                    global.io.emit("laplacian", dataBuffer.toString());
+                    global.io.emit("laplacian", dataBuffer.toString(), header.avg);
                     break;
                 default:
                     global.logger.error("RPI: Transaction not recognized");
