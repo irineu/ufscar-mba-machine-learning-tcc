@@ -6,8 +6,8 @@ import RPi.GPIO as GPIO
 import time
 from gpiozero import Servo
 
-servoA_pin = 14
-servoB_pin = 4
+servoA_pin = 12
+servoB_pin = 33
 
 servoA = Servo(servoA_pin)
 servoB = Servo(servoB_pin)
