@@ -161,13 +161,14 @@ function axis(data){
     console.log("axis", data)
     global.axis += data;
     let id = Object.keys(controlServerConnections)[0];
-    hachiNIO.send(controlServerConnections[id], {transaction : "axis"}, global.axis.toString());
+    hachiNIO.send(controlServerConnections[id], {transaction : "x"}, global.axis.toString());
 }
 
 function yaw(data){
+    console.log("yaw", data)
     global.yaw += data;
     let id = Object.keys(controlServerConnections)[0];
-    hachiNIO.send(controlServerConnections[id], {transaction : "yaw"}, global.axis.toString());
+    hachiNIO.send(controlServerConnections[id], {transaction : "y"}, global.yaw.toString());
 }
 
 async function startServer(imagePort, controlPort){

@@ -4,43 +4,47 @@ import numpy as np
 from hachi_nio import HachiNIOClient
 import RPi.GPIO as GPIO
 import time
+from gpiozero import Servo
 
 servoA_pin = 14
 servoB_pin = 4
 
-deg_0_pulse = 0.5 
-deg_180_pulse = 2.5
-f = 50.0
+servoA = Servo(servoA_pin)
+servoB = Servo(servoB_pin)
 
-period = 1000/f
-k      = 100/period
-deg_0_duty = deg_0_pulse*k
-pulse_range = deg_180_pulse - deg_0_pulse
-duty_range = pulse_range * k
+servoA.value = 100
+servoB.value = 100
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(servoA_pin,GPIO.OUT)
-pwmA = GPIO.PWM(servoA_pin,f)
-pwmA.start(100)
-pwmA.stop()
+# deg_0_pulse = 0.5 
+# deg_180_pulse = 2.5
+# f = 50.0
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(servoB_pin,GPIO.OUT)
-pwmB = GPIO.PWM(servoB_pin,f)
-pwmB.start(100)
-pwmB.stop()
+# period = 1000/f
+# k      = 100/period
+# deg_0_duty = deg_0_pulse*k
+# pulse_range = deg_180_pulse - deg_0_pulse
+# duty_range = pulse_range * k
+
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(servoA_pin,GPIO.OUT)
+# pwmA = GPIO.PWM(servoA_pin,f)
+# pwmA.start(100)
+
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(servoB_pin,GPIO.OUT)
+# pwmB = GPIO.PWM(servoB_pin,f)
+# pwmB.start(100)
 
 def set_angleA(angle):
-        duty = deg_0_duty + (angle/180.0)* duty_range
+        #duty = deg_0_duty + (angle/180.0)* duty_range
         #pwmA.ChangeDutyCycle(duty)
-        pwmA.start(duty)
-        pwmA.stop()
+        servoA.value = angle
+        
 
 def set_angleB(angle):
-        duty = deg_0_duty + (angle/180.0)* duty_range
+        #duty = deg_0_duty + (angle/180.0)* duty_range
         #pwmB.ChangeDutyCycle(duty)
-        pwmA.start(duty)
-        pwmA.stop()
+        servoB.value = angle
 
 cap = opencv.VideoCapture(0)
 cap.set(opencv.CAP_PROP_FRAME_WIDTH, 224)
