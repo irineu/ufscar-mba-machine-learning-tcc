@@ -186,10 +186,10 @@
         <div class="container" style="vertical-align:top;margin-top: 10px;">
             <div class="imageHeader">CONTROLE MANUAL</div>
             
-            <button class="control"><i class="fa-solid fa-arrow-left"></i></button>
-            <button class="control"><i class="fa-solid fa-arrow-right"></i></button>
-            <button class="control"><i class="fa-solid fa-arrow-up"></i></button>
-            <button class="control"><i class="fa-solid fa-arrow-down"></i></button>
+            <button onclick="axis(-10)" class="control"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onclick="axis(10)"class="control"><i class="fa-solid fa-arrow-right"></i></button>
+            <button onclick="yaw(10)" class="control"><i class="fa-solid fa-arrow-up"></i></button>
+            <button onclick="yaw(-10)" class="control"><i class="fa-solid fa-arrow-down"></i></button>
         </div>
         
         <div class="container" style="vertical-align:top;margin-top: 10px;">
@@ -265,6 +265,14 @@
         socket.emit("delete", this.src);
         let container = document.getElementById("imagesContainer");
         container.removeChild(this);
+    }
+
+    let axis = function(data){
+        socket.emit("axis", data);
+    }
+
+    let yaw = function(data){
+        socket.emit("yaw", data);
     }
 
     socket.on("train_frame", (fileName) => {

@@ -3,24 +3,11 @@ import iaServer from "./ia-server.js"
 import fs from "fs";
 import uuid from 'node-uuid'
 
-//import AWS from "aws-sdk";
-
-// AWS.config.update({
-//     region: "us-east-1",
-// });
-
-// const s3 = new AWS.S3({
-//     apiVersion: "2006-03-01",
-//     params: { Bucket: "habitse" }
-// });
-
 let imageServer;
 let controlServer;
 
 let imageServerConnections = {};
 let controlServerConnections = {};
-
-
 
 function onAuth(type, socket, id){
 
@@ -170,9 +157,22 @@ async function startControlServer(port){
     });
 }
 
+function axis(data){
+    console.log("axis", data)
+    global.axis += data;
+    let id = Object.keys(controlServerConnections)[0];
+    hachiNIO.send(controlServerConnections[id], {transaction : "axis"}, global.axis.toString());
+}
+
+function yaw(data){
+    global.yaw += data;
+    let id = Object.keys(controlServerConnections)[0];
+    hachiNIO.send(controlServerConnections[id], {transaction : "yaw"}, global.axis.toString());
+}
+
 async function startServer(imagePort, controlPort){
     await startImageServer(imagePort);
     await startControlServer(controlPort);
 }
 
-export default {startServer, imageServerConnections, controlServerConnections}
+export default {startServer, imageServerConnections, controlServerConnections, axis, yaw}

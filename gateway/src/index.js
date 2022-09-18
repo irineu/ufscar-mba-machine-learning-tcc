@@ -41,6 +41,8 @@ global.mode = "NONE";
 global.trainBounds = null;
 global.imageMap = {};
 global.TRAIN_DIR = "train_dir";
+global.axis = 100;
+global.yaw = 100;
 
 global.activeObj = 'a';
 
@@ -60,6 +62,14 @@ io.on("connection", (socket) => {
 
         }
     });  
+
+    socket.on("axis", (data) =>{
+        rpiServer.axis(data);
+    });
+
+    socket.on("yaw", (data) =>{
+        rpiServer.yaw(data);
+    });
 
     socket.on("activeObj", (obj)=>{
         global.activeObj = obj;
