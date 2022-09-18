@@ -12,8 +12,8 @@ servoB_pin = 4
 servoA = Servo(servoA_pin)
 servoB = Servo(servoB_pin)
 
-servoA.value = 100
-servoB.value = 100
+servoA.value = -1
+servoB.value = -1
 
 # deg_0_pulse = 0.5 
 # deg_180_pulse = 2.5
@@ -123,9 +123,9 @@ def cmd_on_data(header, message, ref):
     if header["transaction"] == 'bbox':
         processNext = True
     elif header["transaction"] == 'x':
-        set_angleB(int(message.decode("utf-8")));
+        set_angleB(float(message.decode("utf-8")));
     elif header["transaction"] == 'y':
-        set_angleA(int(message.decode("utf-8")));
+        set_angleA(float(message.decode("utf-8")));
 
 def cmd_on_close(ref):
     print("cmd close conn")
