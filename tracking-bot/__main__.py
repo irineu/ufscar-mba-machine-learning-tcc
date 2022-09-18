@@ -12,7 +12,7 @@ cap.set(opencv.CAP_PROP_FPS, 36)
 
 loop = None
 #addr = "irineuantunes.com"
-addr = "192.168.15.4"
+addr = "192.168.45.5"
 
 _picIsConnected = False
 _cmdIsConnected = False
@@ -159,7 +159,7 @@ async def run_client():
 
             laplacianAVGList.append(laplacian)
 
-            if len(laplacianAVGList) > 300:
+            if len(laplacianAVGList) > 50:
                 laplacianAVGList.pop(0)
 
             laplaceAVG = 0;
