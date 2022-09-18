@@ -72,6 +72,8 @@ io.on("connection", (socket) => {
         path = path.substr(path.indexOf("train"));
         try{
             fs.unlinkSync(path);
+            path = path.replace(".jpg", ".txt");
+            fs.unlinkSync(path);
         }catch(e){
 
         }
