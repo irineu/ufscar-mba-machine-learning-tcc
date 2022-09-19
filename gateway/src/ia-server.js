@@ -1,10 +1,13 @@
 import hachiNIO from "hachi-nio";
 import rpiServer from "./rpi-server.js"
+import uuid from 'node-uuid'
+import fs from "fs";
 
 let server;
 
 let iaConnections = {};
 let taskMap = {};
+
 
 function startServer(port){
     server= new hachiNIO.server(port);
@@ -32,9 +35,18 @@ function startServer(port){
                 //TODO reusar o alias futuramente
                 break;
             case "process":
-                global.logger.info(JSON.stringify(header) + " - " +dataBuffer.toString());
-                global.logger.info(Object.keys( rpiServer.controlServerConnections));
+                //global.logger.info(JSON.stringify(header) + " - " +dataBuffer.toString());
+                //global.logger.info(Object.keys( rpiServer.controlServerConnections));
+
+                if(global.imageMap[header.to]){
+                    //TODO checar score
+                    console.log("write")
+                    fs.writeFileSync(`${global.TRAIN_DIR}/${uuid.v4()}.jpg`, global.imageMap[header.to]);
+                    delete global.imageMap[header.to];
+                }
+
                 let cmdSocket = rpiServer.controlServerConnections[header.to]
+                global.io.emit("bbox", dataBuffer.toString());
                 hachiNIO.send(cmdSocket, {transaction : "bbox"}, dataBuffer);
                 break;
             default:
@@ -50,7 +62,7 @@ function processImage(rpiID, buffer){
         return;
     }*/
     let mainIAServer = iaConnections[Object.keys(iaConnections)[0]];
-    global.logger.info("IA: sending frame for proccess.. " + rpiID)
+    //global.logger.info("IA: sending frame for proccess.. " + rpiID)
     hachiNIO.send(mainIAServer, {transaction : "proccess", from: rpiID}, buffer);
 }
 

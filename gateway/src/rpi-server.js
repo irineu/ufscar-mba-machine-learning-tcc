@@ -3,24 +3,11 @@ import iaServer from "./ia-server.js"
 import fs from "fs";
 import uuid from 'node-uuid'
 
-//import AWS from "aws-sdk";
-
-// AWS.config.update({
-//     region: "us-east-1",
-// });
-
-// const s3 = new AWS.S3({
-//     apiVersion: "2006-03-01",
-//     params: { Bucket: "habitse" }
-// });
-
 let imageServer;
 let controlServer;
 
 let imageServerConnections = {};
 let controlServerConnections = {};
-
-const TRAIN_DIR = "train_dir";
 
 function onAuth(type, socket, id){
 
@@ -77,24 +64,43 @@ async function startImageServer(port){
 
             switch(header.transaction){
                 case "frame":
-                    if (!fs.existsSync(TRAIN_DIR)){
-                        fs.mkdirSync(TRAIN_DIR);
+                    if (!fs.existsSync(global.TRAIN_DIR)){
+                        fs.mkdirSync(global.TRAIN_DIR);
                     }
                     
                     if(header.train){
-                        //Se elegível para treinar, salva
-                        fs.writeFileSync(`${TRAIN_DIR}/${uuid.v4()}.jpg`, dataBuffer);
-                    }
-                    console.log("frame");
-                    global.io.emit("frame", dataBuffer.toString("base64"));
-                    
-                    //comment for while
-                    //iaServer.processImage(socketClient.authId, dataBuffer);
-                    let cmdSocket = controlServerConnections[socketClient.authId]
+                        console.log(header.train)
+                        if(global.mode == "TRAIN_MANUAL"){
+                            //Se elegível para treinar, salva
+                            let cwh = 224;
+                            let dist = global.zLevel * 5 + 30;
+                            let wh = 224/2;
 
-                    setTimeout(() => {
-                        hachiNIO.send(cmdSocket, {transaction : "reply"}, "ok");
-                    }, 100);
+                            let a = Math.round(parseFloat(wh/cwh) * 1000000) / 1000000
+                            let b = Math.round(parseFloat(dist/cwh) * 1000000) / 1000000
+                            
+
+                            let name = `${global.TRAIN_DIR}/${global.activeObj}/${uuid.v4()}`;
+                            fs.writeFileSync(name + ".jpg", dataBuffer);
+                            fs.writeFileSync(name + ".txt", `0 ${a} ${a} ${b} ${b}`);
+                            global.io.emit("train_frame",name + ".jpg");
+                        }else{
+                            global.imageMap[socketClient.authId] = dataBuffer;
+                        } 
+                    }
+
+                    global.io.emit("frame", dataBuffer.toString("base64"));
+                    if(global.mode == "NONE"){
+                        //comment for while
+                        iaServer.processImage(socketClient.authId, dataBuffer);
+                    }else{
+                         //pocs
+                        setTimeout(() => {
+                            let cmdSocket = controlServerConnections[socketClient.authId]
+                            hachiNIO.send(cmdSocket, {transaction : "reply"}, "ok");
+                        }, 50);
+                    }
+
                     break;
                 default:
                     global.logger.error("RPI: Transaction not recognized");
@@ -141,7 +147,7 @@ async function startControlServer(port){
 
             switch(header.transaction){
                 case "laplacian":
-                    global.io.emit("laplacian", dataBuffer.toString());
+                    global.io.emit("laplacian", dataBuffer.toString(), header.avg);
                     break;
                 default:
                     global.logger.error("RPI: Transaction not recognized");
@@ -151,9 +157,23 @@ async function startControlServer(port){
     });
 }
 
+function axis(data){
+    console.log("axis", data)
+    global.axis += data;
+    let id = Object.keys(controlServerConnections)[0];
+    hachiNIO.send(controlServerConnections[id], {transaction : "x"}, global.axis.toString());
+}
+
+function yaw(data){
+    console.log("yaw", data)
+    global.yaw += data;
+    let id = Object.keys(controlServerConnections)[0];
+    hachiNIO.send(controlServerConnections[id], {transaction : "y"}, global.yaw.toString());
+}
+
 async function startServer(imagePort, controlPort){
     await startImageServer(imagePort);
     await startControlServer(controlPort);
 }
 
-export default {startServer, imageServerConnections, controlServerConnections}
+export default {startServer, imageServerConnections, controlServerConnections, axis, yaw}

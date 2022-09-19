@@ -91,6 +91,48 @@
             width: calc(100% - 20px);
         }
 
+        button.active{
+            margin: 10px;
+            background-color: #ff8730;
+            border: 1px solid #3CFF00;
+            color: #111;
+            padding: 5px;
+            font-size: 12px;
+            width: calc(100% - 20px);
+        }
+
+        button.disabled{
+            margin: 10px;
+            background-color: #000;
+            border: 1px solid #87DE6D;
+            color: #3CFF00;
+            padding: 5px;
+            font-size: 12px;
+            width: calc(100% - 20px);
+        }
+
+        .trainImageContainer{
+
+            margin: 5px;
+            border: 1px solid #3CFF00;
+            vertical-align: top;
+
+            position: absolute;
+            height: 150px;
+            width: calc(100% - 70px);
+            bottom: 35px;
+        }
+
+        .imagesContainer{
+            display: flex;
+            height: calc(100% - 20px);
+            width: 100%;
+            overflow-x: scroll;
+        }
+
+        .imagesContainer img{
+           margin: 0 2px;
+        }
     </style>
 </head>
 <body>
@@ -105,30 +147,52 @@
         <canvas id="imgBBOX"></canvas>
     </div>
 
-    <div class="imageContainer" style="vertical-align:top">
-        <div class="imageHeader">LAPLACIAN</div>
-        <input type="number" id="txtLaplacian" name="tentacles"min="10" value="300"/>
-        <br/>
-        <button class="apply">APLICAR</button>
+    <div style="display: inline-block; vertical-align: top;">
+        <div class="imageContainer" style="vertical-align:top;  width:150px">
+            <div class="imageHeader">LAPLACIAN</div>
+            <label>Reconhecido</label>
+            <h3 id="outLaplacian">0</h3>
 
-        <label>Reconhecido</label>
-        <h3 id="outLaplacian">0</h3>
+            <label>Média</label>
+            <h3 id="outLaplacianAVG">0</h3>
+        </div>
 
-        <label>Média</label>
-        <h3 id="outLaplacianAVG">0</h3>
+        <div class="container" style="vertical-align:top">
+            <div class="imageHeader">TREINAMENTO</div>
+            <button class="disabled" onclick="trackMode()">DESATIVAR</button>
+            <br/>
+            <button class="apply" onclick="manualTrain('+')">MANUAL +</button>
+            <br/>
+            <button class="apply" onclick="manualTrain('-')">MANUAL -</button>
+            <br/>
+            <button class="apply" onclick="automaticTrain()">AUTOMATICO</button>
+        </div>
+        
     </div>
 
+    <!--<div style="display: inline-block; vertical-align: top;">
+        
+    </div>-->
+
     <div style="display: inline-block; vertical-align: top;">
-        <div class="container" style="vertical-align:top">
+        <div class="container" style="vertical-align:top;">
+            <div class="imageHeader">RASTREIO</div>
+            <button id="obj-a" class="apply active" onclick="setObj('a')">OBJ A</button>
+            <br/>
+            <button id="obj-b" class="apply" onclick="setObj('b')">OBJ B</button>
+            <br/>
+            <button id="obj-c" class="apply" onclick="setObj('c')">OBJ C</button>
+        </div>
+        <div class="container" style="vertical-align:top;margin-top: 10px;">
             <div class="imageHeader">CONTROLE MANUAL</div>
             
-            <button class="control"><i class="fa-solid fa-arrow-left"></i></button>
-            <button class="control"><i class="fa-solid fa-arrow-right"></i></button>
-            <button class="control"><i class="fa-solid fa-arrow-up"></i></button>
-            <button class="control"><i class="fa-solid fa-arrow-down"></i></button>
+            <button onclick="yaw(-5)" class="control"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onclick="yaw(5)"class="control"><i class="fa-solid fa-arrow-right"></i></button>
+            <button onclick="axis(-10)" class="control"><i class="fa-solid fa-arrow-up"></i></button>
+            <button onclick="axis(10)" class="control"><i class="fa-solid fa-arrow-down"></i></button>
         </div>
-        <br/>
-        <div class="container" style="vertical-align:top">
+        
+        <div class="container" style="vertical-align:top;margin-top: 10px;">
             <div class="imageHeader">CONTROLE AUTOMÁTICO</div>
             
             <button class="acontrol"><i class="fa-solid fa-arrow-left"></i></button>
@@ -138,22 +202,107 @@
             <br/>
             <button class="apply">DESATIVAR</button>
         </div>
+        <br/>
+        
     </div>
     
+    <div class="trainImageContainer">
+        <div class="imageHeader">IMAGEMS TREINAMENTO</div>
+        <div class="imagesContainer" id="imagesContainer">
+
+        </div>
+    </div>
+
 </body>
 <script>
     const socket = io();
 
     let cimg = new Image();
     let updateIMG = false;
+    let state = "TRACK"
+    let zLevel = 1;
+    let trackData = [];
 
-    let laplacianAVG = [];
+    let activeObj = 'a'
 
-    socket.on("laplacian", (rawData) => {
+    //let laplacianAVG = [];
+
+    let setObj = (str) => {
+        document.getElementById('obj-a').classList.remove('active')
+        document.getElementById('obj-b').classList.remove('active')
+        document.getElementById('obj-c').classList.remove('active')
+
+        document.getElementById('obj-'+ str).classList.add('active')
+
+        activeObj = str;
+        
+        socket.emit("activeObj", activeObj);
+
+        let container = document.getElementById("imagesContainer");
+        container.innerHTML = '';
+    }
+
+    let trackMode = () => {
+        state = 'NONE';
+        socket.emit("mode", state);
+    }
+
+    let manualTrain = (z) => {
+        state = "TRAIN_MANUAL";
+        if(z == '+'){
+            if(zLevel < 8){
+                zLevel++;
+            }
+        }else{
+            if(zLevel > 1){
+                zLevel--;
+            }
+        }
+        socket.emit("mode", "TRAIN_MANUAL", zLevel);
+    }
+
+    let onDeleteImage = function(){
+        socket.emit("delete", this.src);
+        let container = document.getElementById("imagesContainer");
+        container.removeChild(this);
+    }
+
+    let axis = function(data){
+        socket.emit("axis", data);
+    }
+
+    let yaw = function(data){
+        socket.emit("yaw", data);
+    }
+
+    socket.on("train_frame", (fileName) => {
+        let container = document.getElementById("imagesContainer");
+        const img = document.createElement("img");
+        img.src  = fileName;
+        img.onclick = onDeleteImage;
+        container.appendChild(img);
+    })
+
+    socket.on("bbox", (data) => {
+        this.trackData = JSON.parse(data).filter(d => d.confidence > 90);
+    })
+
+    socket.on("index", (files) => {
+        let container = document.getElementById("imagesContainer");
+
+        files.forEach(f => {
+            const img = document.createElement("img");
+            img.src = "train_dir/" + activeObj + "/" + f;
+            img.onclick = onDeleteImage;
+            container.appendChild(img);
+        })
+    })
+
+    socket.on("laplacian", (rawData, avg) => {
         let val = Math.round(parseFloat(rawData) * 1000) / 1000;
         document.getElementById("outLaplacian").innerHTML = val;
 
-        laplacianAVG.push(val);
+        /*laplacianAVG.push(val);
 
         if(laplacianAVG.length > 300){
             laplacianAVG.shift();
@@ -164,7 +313,9 @@
         let avg = (sum / laplacianAVG.length) || 0;
         avg = Math.round(parseFloat(avg) * 100) / 100;
 
-        document.getElementById("outLaplacianAVG").innerHTML = avg;
+        */
+
+        document.getElementById("outLaplacianAVG").innerHTML = Math.round(parseFloat(avg) * 100) / 100;
 
     });
 
@@ -189,6 +340,7 @@
             x = Math.floor(x) + 0.5;
             y = Math.floor(y) + 0.5;
 
+
             ctx.beginPath();
             ctx.strokeWidth = 1;
 
@@ -203,77 +355,179 @@
             ctx.stroke();
 
             //////
-            ctx.beginPath();
-            ctx = canvas.getContext( '2d' );
-            ctx.strokeWidth = 1;
+           
+            if (state == "TRACK"){
+                
+                ctx.beginPath();
+                ctx = canvas.getContext( '2d' );
+                ctx.strokeWidth = 1;
 
-            ctx.moveTo(x, y - 10);
-            ctx.lineTo(x, y + 10);
+                ctx.moveTo(x, y - 10);
+                ctx.lineTo(x, y + 10);
 
-            ctx.moveTo(x - 10,  y);
-            ctx.lineTo(x + 10,  y);
-            
+                ctx.moveTo(x - 10,  y);
+                ctx.lineTo(x + 10,  y);
+                
 
-            // Line color
-            ctx.strokeStyle = '#3CFF00';
-            ctx.stroke();
+                // Line color
+                ctx.strokeStyle = '#3CFF00';
+                ctx.stroke();
+                ////
 
-            ////
+                let dist = 110;
 
-            let dist = 110;
+                ctx.beginPath();
+                ctx = canvas.getContext( '2d' );
+                ctx.strokeWidth = 1;
 
-            ctx.beginPath();
-            ctx = canvas.getContext( '2d' );
-            ctx.strokeWidth = 1;
+                ctx.moveTo(x + dist, y - 5);
+                ctx.lineTo(x + dist, y + 5);
+                
+                ctx.moveTo(x - dist, y - 5);
+                ctx.lineTo(x - dist, y + 5);
 
-            ctx.moveTo(x + dist, y - 5);
-            ctx.lineTo(x + dist, y + 5);
-            
-            ctx.moveTo(x - dist, y - 5);
-            ctx.lineTo(x - dist, y + 5);
+                ///
 
-            ///
+                ctx.moveTo(x - 5,  y - dist);
+                ctx.lineTo(x + 5,  y - dist);
 
-            ctx.moveTo(x - 5,  y - dist);
-            ctx.lineTo(x + 5,  y - dist);
+                ctx.moveTo(x - 5,  y + dist);
+                ctx.lineTo(x + 5,  y + dist);
+                
 
-            ctx.moveTo(x - 5,  y + dist);
-            ctx.lineTo(x + 5,  y + dist);
-            
-
-            // Line color
-            ctx.strokeStyle = '#3CFF00';
-            ctx.stroke();
+                // Line color
+                ctx.strokeStyle = '#3CFF00';
+                ctx.stroke();
 
 
-            // ctx.beginPath();
-            // ctx.arc(x, y, 30, 0, 2 * Math.PI);
-            // ctx.stroke();
+                // ctx.beginPath();
+                // ctx.arc(x, y, 30, 0, 2 * Math.PI);
+                // ctx.stroke();
 
-            ctx.beginPath();
-            ctx.font = "12px Arial";
-            ctx.fillStyle =  '#3CFF00';
-            ctx.fillText("CONFIDÊNCIA: ?", 10, 20);
+                ctx.beginPath();
+                ctx.font = "12px Arial";
+                ctx.fillStyle =  '#3CFF00';
 
-            ctx.beginPath();
-            ctx.font = "10px Arial";
-            ctx.fillStyle =  '#3CFF00';
-            ctx.fillText("X: ?", 10, 40);
+                if(this.trackData.length > 0){
+                    ctx.fillText("CONFIDÊNCIA: " + this.trackData[0].confidence, 10, 20);
+                }else{
+                    ctx.fillText("CONFIDÊNCIA: ?", 10, 20);
+                }
 
-            ctx.beginPath();
-            ctx.font = "10px Arial";
-            ctx.fillStyle =  '#3CFF00';
-            ctx.fillText("Y: ?", 10, 60);
+                ctx.beginPath();
+                ctx.font = "10px Arial";
+                ctx.fillStyle =  '#3CFF00';
 
-            ctx.beginPath();
-            ctx.font = "10px Arial";
-            ctx.fillStyle =  '#3CFF00';
-            ctx.fillText("W: ?", 10, 80);
+                if(this.trackData.length > 0){
+                    ctx.fillText("X: " + this.trackData[0].points[0], 10, 40);
+                }else{
+                    ctx.fillText("X: ?", 10, 40);
+                }
+                
 
-            ctx.beginPath();
-            ctx.font = "1=px Arial";
-            ctx.fillStyle =  '#3CFF00';
-            ctx.fillText("H: ?", 10, 100);
+                ctx.beginPath();
+                ctx.font = "10px Arial";
+                ctx.fillStyle =  '#3CFF00';
+
+                if(this.trackData.length > 0){
+                    ctx.fillText("Y: " + this.trackData[0].points[1], 10, 60);
+                }else{
+                    ctx.fillText("Y: ?", 10, 60);
+                }
+
+                ctx.beginPath();
+                ctx.font = "10px Arial";
+                ctx.fillStyle =  '#3CFF00';
+                
+                if(this.trackData.length > 0){
+                    ctx.fillText("W: " + this.trackData[0].points[2], 10, 80);
+                }else{
+                    ctx.fillText("W: ?", 10, 80);
+                }
+
+                ctx.beginPath();
+                ctx.font = "1=px Arial";
+                ctx.fillStyle =  '#3CFF00';
+
+                if(this.trackData.length > 0){
+                    ctx.fillText("H: " + this.trackData[0].points[3], 10, 100);
+                }else{
+                    ctx.fillText("H: ?", 10, 100);
+                }
+
+                if(this.trackData.length > 0){
+                    ctx.beginPath();
+                    ctx.strokeWidth = 3;
+
+
+
+                    ctx.moveTo(this.trackData[0].points[0] * 1.5, this.trackData[0].points[3] * 1.5);
+                    ctx.lineTo(this.trackData[0].points[0] * 1.5, this.trackData[0].points[1] * 1.5);
+                    ctx.lineTo(this.trackData[0].points[2] * 1.5, this.trackData[0].points[1] * 1.5);
+                    ctx.lineTo(this.trackData[0].points[2] * 1.5, this.trackData[0].points[3] * 1.5);
+                    ctx.lineTo(this.trackData[0].points[0] * 1.5, this.trackData[0].points[3] * 1.5);
+
+
+                    ctx.moveTo(x + dist, y + dist + 10) ;
+                    ctx.lineTo(x + dist - 10, y + dist + 10);
+
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#3CFF00';
+                    ctx.stroke();
+                }
+
+                //ctx.lineWidth = 2;
+            }else if(state == 'TRAIN_MANUAL'){
+
+                dist = zLevel * 5 + 30;
+                dist = dist * 1.5;
+
+                ctx.beginPath();
+                ctx.strokeWidth = 3;
+
+                ctx.moveTo(x + dist, y + dist);
+                ctx.lineTo(x + dist, y + dist + 10);
+
+                ctx.moveTo(x + dist, y + dist + 10) ;
+                ctx.lineTo(x + dist - 10, y + dist + 10);
+
+                ///
+
+                ctx.moveTo(x - dist, y + dist);
+                ctx.lineTo(x - dist, y + dist + 10);
+
+                ctx.moveTo(x - dist, y + dist + 10) ;
+                ctx.lineTo(x - dist + 10, y + dist + 10);
+
+                ///
+
+                ctx.moveTo(x + dist, y - dist);
+                ctx.lineTo(x + dist, y - dist + 10);
+
+                ctx.moveTo(x + dist, y - dist) ;
+                ctx.lineTo(x + dist - 10, y - dist);
+
+                //
+
+                ctx.moveTo(x - dist, y - dist);
+                ctx.lineTo(x - dist, y - dist + 10);
+
+                ctx.moveTo(x - dist, y - dist) ;
+                ctx.lineTo(x - dist + 10, y - dist);
+                
+                /*ctx.moveTo(x - dist, y - 5);
+                ctx.lineTo(x - dist, y + 5);
+
+                ctx.moveTo(x - 5,  y - dist);
+                ctx.lineTo(x + 5,  y - dist);
+
+                ctx.moveTo(x - 5,  y + dist);
+                ctx.lineTo(x + 5,  y + dist);*/
+                
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#3CFF00';
+                ctx.stroke();
+            }
         }
 
         cimg.onload = function() {
